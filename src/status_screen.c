@@ -178,6 +178,21 @@ static void draw_battery_row(int y, const char *label, uint8_t level, bool conne
     draw_text(36, y, W - 36, &lv_font_unscii_8, LV_TEXT_ALIGN_LEFT, txt);
 }
 
+/* unscii_8 is 8 pixels per character, so a name of up to 8 characters always fits.
+ * EXPAND clips a longer name instead of wrapping it onto the modifier symbols. */
+static void draw_layer(const char *name) {
+    bool fits = lv_txt_get_width(name, strlen(name), &lv_font_montserrat_16, 0,
+                                 LV_TEXT_FLAG_NONE) <= W;
+    lv_draw_label_dsc_t dsc;
+
+    lv_draw_label_dsc_init(&dsc);
+    dsc.color = FG;
+    dsc.font = fits ? &lv_font_montserrat_16 : &lv_font_unscii_8;
+    dsc.align = LV_TEXT_ALIGN_CENTER;
+    dsc.flag = LV_TEXT_FLAG_EXPAND;
+    lv_canvas_draw_text(portrait, 0, fits ? 58 : 63, W, &dsc, name);
+}
+
 static void draw_modifiers(void) {
     for (int i = 0; i < ARRAY_SIZE(modifier_symbols); i++) {
         int slot = IS_ENABLED(CONFIG_ZMK_SPLIT_DISPLAY_VIEW_MIRROR_MODIFIERS)
@@ -248,8 +263,7 @@ static void draw_all(void) {
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_DISPLAY_VIEW_CENTRAL_BATTERY)
     draw_battery_row(44, "C", state.central_battery, true);
 #endif
-    draw_text(0, 58, W, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER,
-              linked ? state.layer : "no link");
+    draw_layer(linked ? state.layer : "no link");
     draw_modifiers();
     draw_indicators();
     select_animation();

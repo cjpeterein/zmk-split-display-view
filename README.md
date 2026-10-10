@@ -13,7 +13,9 @@ such as nice!view. It shows:
 - USB and BLE output of the central, the active BLE profile and its state
 - the battery level of each half (and optionally of the central)
 - the name of the highest active layer, or `no link` when the half is
-  not connected to the central
+  not connected to the central. A name too wide for the large font is
+  drawn in the small font, which fits 8 characters; longer names are
+  clipped
 - active modifiers and the Caps, Num and Scroll Lock indicators
 - a bongo cat that types at the central's WPM, and the WPM
 
