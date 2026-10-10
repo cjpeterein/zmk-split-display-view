@@ -1,0 +1,4 @@
+name: zmk-split-display-view
+build:
+  cmake: .
+  kconfig: Kconfig

@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: MIT
+
+DT_CHOSEN_SDV_CHANNEL := zmk,split-display-view-channel
+
+config ZMK_SPLIT_DISPLAY_VIEW
+    bool "zmk-dongle-display-view style status screen on a split peripheral"
+    depends on ZMK_DISPLAY_STATUS_SCREEN_CUSTOM && ZMK_SPLIT && !ZMK_SPLIT_ROLE_CENTRAL
+    depends on ZMK_SPLIT_STATUS_RELAY
+    select LV_USE_IMG
+    select LV_USE_CANVAS
+    select LV_FONT_UNSCII_8
+    select LV_FONT_MONTSERRAT_16
+
+if ZMK_SPLIT_DISPLAY_VIEW
+
+config ZMK_SPLIT_DISPLAY_VIEW_ROTATE_CCW
+    bool "Rotate the portrait screen counterclockwise instead of clockwise"
+
+config ZMK_SPLIT_DISPLAY_VIEW_MAC_MODIFIERS
+    bool "Use macOS modifier symbols"
+
+config ZMK_SPLIT_DISPLAY_VIEW_SLOT0_LABEL
+    string "Battery label of the first peripheral the central paired"
+    default "L"
+
+config ZMK_SPLIT_DISPLAY_VIEW_SLOT1_LABEL
+    string "Battery label of the second peripheral the central paired"
+    default "R"
+
+config ZMK_SPLIT_DISPLAY_VIEW_CENTRAL_BATTERY
+    bool "Show the battery level of the central"
+
+endif
+
+config ZMK_SPLIT_DISPLAY_VIEW_MODS_RELAY
+    bool "Relay modifiers and HID indicators from the central"
+    depends on ZMK_SPLIT && ZMK_ARBITRARY_SPLIT_DATA_CHANNEL
+    default $(dt_chosen_enabled,$(DT_CHOSEN_SDV_CHANNEL))
