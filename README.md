@@ -86,3 +86,7 @@ the left half first or swap the labels.
 ```
 cc -I src tests/rotate_test.c -o /tmp/rotate_test && /tmp/rotate_test
 ```
+
+`.github/workflows/ci.yml` runs that check and builds the ZMK v0.3
+Corne in `test-config/` with the module: the left half as a split
+central and the right half as a peripheral with this screen.

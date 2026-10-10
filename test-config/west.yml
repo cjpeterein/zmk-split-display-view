@@ -1,0 +1,12 @@
+# The workflow adds this repository as an extra module, so only ZMK is listed
+manifest:
+  remotes:
+    - name: zmkfirmware
+      url-base: https://github.com/zmkfirmware
+  projects:
+    - name: zmk
+      remote: zmkfirmware
+      revision: v0.3
+      import: app/west.yml
+  self:
+    path: test-config

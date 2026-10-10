@@ -1,0 +1,9 @@
+# corne_left is a split central and builds central.c; corne_right is a
+# peripheral and builds the screen
+---
+include:
+  - board: nice_nano_v2
+    shield: corne_left
+  - board: nice_nano_v2
+    shield: corne_right nice_view_adapter nice_view
+    cmake-args: -DCONFIG_NICE_VIEW_WIDGET_STATUS=n -DCONFIG_ZMK_SPLIT_DISPLAY_VIEW=y
