@@ -17,67 +17,33 @@ such as nice!view. It shows:
 - active modifiers and the Caps, Num and Scroll Lock indicators
 - a bongo cat that types at the central's WPM, and the WPM
 
-A peripheral has no keymap or HID state, so the data comes from the
-central through
+A peripheral has no keymap or HID state, so the central sends all of it
+to each peripheral as one small status message over a Bluetooth L2CAP
+channel (PSM 0x0081) on the existing split connection. The central side
+of this module does that, so it needs no other modules. It replaces
 [dmhuisma/zmk-split-status-relay](https://github.com/dmhuisma/zmk-split-status-relay)
-and, for modifiers and indicators, through an extra
-[arbitrary split data channel](https://github.com/dmhuisma/zmk_arbitrary_split_data_channel)
-that this module adds.
+and
+[zmk_arbitrary_split_data_channel](https://github.com/dmhuisma/zmk_arbitrary_split_data_channel),
+which earlier versions of this module used.
 
 ## Supported ZMK
 
 ZMK v0.3 (Zephyr 3.5, LVGL 8.3) with the BLE split transport. Later ZMK
-releases move to LVGL 9 and are not supported.
+releases move to LVGL 9 and are not supported. The central and the
+peripherals must run the same version of this module.
 
 ## Install
 
-Add the module and its dependencies to `config/west.yml`:
+Add the module to `config/west.yml`:
 
 ```yaml
   remotes:
-    - name: dmhuisma
-      url-base: https://github.com/dmhuisma
     - name: cjpeterein
       url-base: https://github.com/cjpeterein
   projects:
-    - name: zmk_arbitrary_split_data_channel
-      remote: dmhuisma
-      revision: main
-    - name: zmk-split-status-relay
-      remote: dmhuisma
-      revision: main
     - name: zmk-split-display-view
       remote: cjpeterein
       revision: main
-```
-
-Add the channels to the devicetree of the central and of every
-peripheral, for example in a shared `.dtsi` included by each overlay:
-
-```dts
-/ {
-    chosen {
-        zmk,split-display-view-channel = &asdc1;
-    };
-
-    asdc0: split_data_channel {
-        compatible = "zmk,arbitrary-split-data-channel";
-        channel-id = <1>;
-        status = "okay";
-    };
-
-    asdc1: split_display_view_channel {
-        compatible = "zmk,arbitrary-split-data-channel";
-        channel-id = <2>;
-        status = "okay";
-    };
-
-    split_status_relay {
-        compatible = "zmk,split-status-relay";
-        asdc-channel = <&asdc0>;
-        status = "okay";
-    };
-};
 ```
 
 Build each half with the stock `nice_view` shield (it provides the
@@ -89,9 +55,14 @@ CONFIG_NICE_VIEW_WIDGET_STATUS=n
 CONFIG_ZMK_SPLIT_DISPLAY_VIEW=y
 ```
 
-On the central, set `CONFIG_ZMK_HID_INDICATORS=y` to relay the lock
-indicators and `CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING=y`
-so it can relay the battery levels of the halves.
+The central needs no configuration: building it with the module enables
+`CONFIG_ZMK_SPLIT_DISPLAY_VIEW_CENTRAL`, which turns on WPM, HID
+indicators and fetching the battery levels of the halves unless the
+config turns them off.
+
+When upgrading from the relay modules, remove them from `west.yml` and
+remove their devicetree nodes and the `zmk,split-display-view-channel`
+chosen node from the overlays.
 
 ## Kconfig options
 
@@ -103,10 +74,10 @@ so it can relay the battery levels of the halves.
 | `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_SLOT0_LABEL` | `L` | Battery label of the first peripheral the central paired |
 | `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_SLOT1_LABEL` | `R` | Battery label of the second |
 | `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_CENTRAL_BATTERY` | n | Also show the central's battery |
-| `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_MODS_RELAY` | y when the chosen channel exists | Relay modifiers and indicators |
+| `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_CENTRAL` | y on a BLE split central | Send the status to the peripherals |
 
-The relay numbers peripherals in the order the central paired them, so
-pair the left half first or swap the labels.
+The central numbers peripherals in the order it paired them, so pair
+the left half first or swap the labels.
 
 ## Development
 

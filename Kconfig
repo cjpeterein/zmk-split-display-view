@@ -1,11 +1,9 @@
 # SPDX-License-Identifier: MIT
 
-DT_CHOSEN_SDV_CHANNEL := zmk,split-display-view-channel
-
 config ZMK_SPLIT_DISPLAY_VIEW
     bool "zmk-dongle-display-view style status screen on a split peripheral"
-    depends on ZMK_DISPLAY_STATUS_SCREEN_CUSTOM && ZMK_SPLIT && !ZMK_SPLIT_ROLE_CENTRAL
-    depends on ZMK_SPLIT_STATUS_RELAY
+    depends on ZMK_DISPLAY_STATUS_SCREEN_CUSTOM && ZMK_SPLIT_BLE && !ZMK_SPLIT_ROLE_CENTRAL
+    select BT_L2CAP_DYNAMIC_CHANNEL
     select LV_USE_IMG
     select LV_USE_CANVAS
     select LV_FONT_UNSCII_8
@@ -32,7 +30,11 @@ config ZMK_SPLIT_DISPLAY_VIEW_CENTRAL_BATTERY
 
 endif
 
-config ZMK_SPLIT_DISPLAY_VIEW_MODS_RELAY
-    bool "Relay modifiers and HID indicators from the central"
-    depends on ZMK_SPLIT && ZMK_ARBITRARY_SPLIT_DATA_CHANNEL
-    default $(dt_chosen_enabled,$(DT_CHOSEN_SDV_CHANNEL))
+config ZMK_SPLIT_DISPLAY_VIEW_CENTRAL
+    bool "Send the status shown by zmk-split-display-view peripherals"
+    depends on ZMK_SPLIT_BLE && ZMK_SPLIT_ROLE_CENTRAL
+    default y
+    select BT_L2CAP_DYNAMIC_CHANNEL
+    imply ZMK_WPM
+    imply ZMK_HID_INDICATORS
+    imply ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING if ZMK_BATTERY_REPORTING
