@@ -17,6 +17,9 @@ config ZMK_SPLIT_DISPLAY_VIEW_ROTATE_CCW
 config ZMK_SPLIT_DISPLAY_VIEW_MAC_MODIFIERS
     bool "Use macOS modifier symbols"
 
+config ZMK_SPLIT_DISPLAY_VIEW_MIRROR_MODIFIERS
+    bool "Show the modifier symbols in reverse order, for the right half"
+
 config ZMK_SPLIT_DISPLAY_VIEW_SLOT0_LABEL
     string "Battery label of the first peripheral the central paired"
     default "L"

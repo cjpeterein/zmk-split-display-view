@@ -70,11 +70,17 @@ chosen node from the overlays.
 | --- | --- | --- |
 | `CONFIG_ZMK_SPLIT_DISPLAY_VIEW` | n | Use this status screen on a peripheral |
 | `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_ROTATE_CCW` | n | Rotate counterclockwise, for a panel mounted the other way up |
-| `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_MAC_MODIFIERS` | n | Show macOS modifier symbols |
+| `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_MAC_MODIFIERS` | n | Show macOS command and option symbols in place of Windows and Alt |
+| `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_MIRROR_MODIFIERS` | n | Show the modifiers as Shift, Ctrl, Alt, GUI instead of GUI, Alt, Ctrl, Shift, to mirror the left half on the right |
 | `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_SLOT0_LABEL` | `L` | Battery label of the first peripheral the central paired |
 | `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_SLOT1_LABEL` | `R` | Battery label of the second |
 | `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_CENTRAL_BATTERY` | n | Also show the central's battery |
 | `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_CENTRAL` | y on a BLE split central | Send the status to the peripherals |
+
+The halves share one `.conf` in most user configs, so set the mirror
+option for the right half only, for example with
+`cmake-args: -DCONFIG_ZMK_SPLIT_DISPLAY_VIEW_MIRROR_MODIFIERS=y` in its
+`build.yaml` entry.
 
 The central numbers peripherals in the order it paired them, so pair
 the left half first or swap the labels.

@@ -71,24 +71,23 @@ struct modifier_symbol {
 };
 
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_DISPLAY_VIEW_MAC_MODIFIERS)
-LV_IMG_DECLARE(opt_icon);
 LV_IMG_DECLARE(cmd_icon);
-static const struct modifier_symbol modifier_symbols[] = {
-    {MOD_LCTL | MOD_RCTL, &control_icon},
-    {MOD_LALT | MOD_RALT, &opt_icon},
-    {MOD_LGUI | MOD_RGUI, &cmd_icon},
-    {MOD_LSFT | MOD_RSFT, &shift_icon},
-};
+LV_IMG_DECLARE(opt_icon);
+#define GUI_ICON cmd_icon
+#define ALT_ICON opt_icon
 #else
-LV_IMG_DECLARE(alt_icon);
 LV_IMG_DECLARE(win_icon);
+LV_IMG_DECLARE(alt_icon);
+#define GUI_ICON win_icon
+#define ALT_ICON alt_icon
+#endif
+
 static const struct modifier_symbol modifier_symbols[] = {
-    {MOD_LGUI | MOD_RGUI, &win_icon},
-    {MOD_LALT | MOD_RALT, &alt_icon},
+    {MOD_LGUI | MOD_RGUI, &GUI_ICON},
+    {MOD_LALT | MOD_RALT, &ALT_ICON},
     {MOD_LCTL | MOD_RCTL, &control_icon},
     {MOD_LSFT | MOD_RSFT, &shift_icon},
 };
-#endif
 
 static const lv_img_dsc_t *idle_imgs[] = {&bongo_cat_both1_open, &bongo_cat_both1_open,
                                           &bongo_cat_both1_open, &bongo_cat_both1};
@@ -181,7 +180,10 @@ static void draw_battery_row(int y, const char *label, uint8_t level, bool conne
 
 static void draw_modifiers(void) {
     for (int i = 0; i < ARRAY_SIZE(modifier_symbols); i++) {
-        int x = 1 + 17 * i;
+        int slot = IS_ENABLED(CONFIG_ZMK_SPLIT_DISPLAY_VIEW_MIRROR_MODIFIERS)
+                       ? ARRAY_SIZE(modifier_symbols) - 1 - i
+                       : i;
+        int x = 1 + 17 * slot;
 
         draw_img(x, 80, modifier_symbols[i].img);
         if (state.mods & modifier_symbols[i].mods) {
