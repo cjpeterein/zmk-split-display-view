@@ -31,6 +31,11 @@ config ZMK_SPLIT_DISPLAY_VIEW_SLOT1_LABEL
 config ZMK_SPLIT_DISPLAY_VIEW_CENTRAL_BATTERY
     bool "Show the battery level of the central"
 
+config ZMK_SPLIT_DISPLAY_VIEW_USB_POWER
+    bool "Tell the central when this half's USB has power, to show a bolt by its battery"
+    depends on USB_DEVICE_STACK
+    default y
+
 endif
 
 config ZMK_SPLIT_DISPLAY_VIEW_CENTRAL

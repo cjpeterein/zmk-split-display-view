@@ -18,6 +18,7 @@
 struct sdv_status {
     uint8_t battery[SDV_SLOTS];
     bool connected[SDV_SLOTS];
+    bool usb_powered[SDV_SLOTS];
     uint8_t central_battery;
     uint8_t transport;
     bool usb_connected;
@@ -29,5 +30,8 @@ struct sdv_status {
     uint8_t indicators;
     char layer[SDV_LAYER_LEN];
 } __packed;
+
+/* A peripheral sends the central one byte, nonzero while its own USB has power */
+#define SDV_USB_POWER_LEN 1
 
 BUILD_ASSERT(sizeof(struct sdv_status) <= SDV_MTU, "The status must fit one L2CAP SDU");

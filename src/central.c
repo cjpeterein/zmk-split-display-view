@@ -131,10 +131,17 @@ static void chan_connected(struct bt_l2cap_chan *chan) {
 
 static void chan_disconnected(struct bt_l2cap_chan *chan) {
     status.connected[chan_slot(chan)] = false;
+    status.usb_powered[chan_slot(chan)] = false;
     request_send();
 }
 
-static int chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf) { return 0; }
+static int chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf) {
+    if (buf->len == SDV_USB_POWER_LEN) {
+        status.usb_powered[chan_slot(chan)] = buf->data[0];
+        request_send();
+    }
+    return 0;
+}
 
 static const struct bt_l2cap_chan_ops chan_ops = {
     .connected = chan_connected,

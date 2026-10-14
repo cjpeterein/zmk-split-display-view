@@ -25,6 +25,11 @@
 #include <zmk/event_manager.h>
 #include <zmk/events/split_peripheral_status_changed.h>
 
+#if IS_ENABLED(CONFIG_ZMK_SPLIT_DISPLAY_VIEW_USB_POWER)
+#include <zmk/events/usb_conn_state_changed.h>
+#include <zmk/usb.h>
+#endif
+
 #include "rotate.h"
 #include "sdv_status.h"
 
@@ -47,6 +52,7 @@ LV_IMG_DECLARE(sym_bt);
 LV_IMG_DECLARE(sym_ok);
 LV_IMG_DECLARE(sym_nok);
 LV_IMG_DECLARE(sym_open);
+LV_IMG_DECLARE(sym_bolt);
 LV_IMG_DECLARE(sym_1);
 LV_IMG_DECLARE(sym_2);
 LV_IMG_DECLARE(sym_3);
@@ -165,7 +171,8 @@ static void draw_output(void) {
     draw_rect(usb ? 0 : 22, 15, 17, 2, FG, 0);
 }
 
-static void draw_battery_row(int y, const char *label, uint8_t level, bool connected) {
+static void draw_battery_row(int y, const char *label, uint8_t level, bool connected,
+                             bool usb_powered) {
     char txt[6] = "--";
 
     draw_text(0, y, 8, &lv_font_unscii_8, LV_TEXT_ALIGN_LEFT, label);
@@ -176,6 +183,9 @@ static void draw_battery_row(int y, const char *label, uint8_t level, bool conne
         snprintf(txt, sizeof(txt), "%u", level);
     }
     draw_text(36, y, W - 36, &lv_font_unscii_8, LV_TEXT_ALIGN_LEFT, txt);
+    if (usb_powered) {
+        draw_img(62, y, &sym_bolt);
+    }
 }
 
 /* unscii_8 is 8 pixels per character, so a name of up to 8 characters always fits.
@@ -258,10 +268,11 @@ static void draw_all(void) {
     lv_canvas_fill_bg(portrait, BG, LV_OPA_COVER);
     draw_output();
     for (int i = 0; i < SDV_SLOTS; i++) {
-        draw_battery_row(20 + 12 * i, slot_labels[i], state.battery[i], state.connected[i]);
+        draw_battery_row(20 + 12 * i, slot_labels[i], state.battery[i], state.connected[i],
+                         state.usb_powered[i]);
     }
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_DISPLAY_VIEW_CENTRAL_BATTERY)
-    draw_battery_row(44, "C", state.central_battery, true);
+    draw_battery_row(44, "C", state.central_battery, true, state.usb_connected);
 #endif
     draw_layer(linked ? state.layer : "no link");
     draw_modifiers();
@@ -303,7 +314,56 @@ static int status_recv(struct bt_l2cap_chan *chan, struct net_buf *buf) {
     return 0;
 }
 
-static const struct bt_l2cap_chan_ops status_ops = {.recv = status_recv};
+#if IS_ENABLED(CONFIG_ZMK_SPLIT_DISPLAY_VIEW_USB_POWER)
+NET_BUF_POOL_FIXED_DEFINE(sdv_usb_pool, 1, BT_L2CAP_SDU_BUF_SIZE(SDV_USB_POWER_LEN),
+                          CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+static int sent_usb_powered = -1;
+
+static void usb_send_cb(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(usb_send_work, usb_send_cb);
+
+static void usb_send_cb(struct k_work *work) {
+    uint8_t powered = zmk_usb_is_powered();
+    struct net_buf *buf;
+
+    if (!status_chan.chan.conn || powered == sent_usb_powered) {
+        return;
+    }
+    buf = net_buf_alloc(&sdv_usb_pool, K_NO_WAIT);
+    if (!buf) {
+        k_work_reschedule(&usb_send_work, K_MSEC(100));
+        return;
+    }
+    net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
+    net_buf_add_u8(buf, powered);
+    if (bt_l2cap_chan_send(&status_chan.chan, buf) < 0) {
+        net_buf_unref(buf);
+        k_work_reschedule(&usb_send_work, K_MSEC(100));
+        return;
+    }
+    sent_usb_powered = powered;
+}
+
+static void status_connected(struct bt_l2cap_chan *chan) {
+    sent_usb_powered = -1;
+    k_work_reschedule(&usb_send_work, K_NO_WAIT);
+}
+
+static int usb_listener(const zmk_event_t *eh) {
+    k_work_reschedule(&usb_send_work, K_NO_WAIT);
+    return ZMK_EV_EVENT_BUBBLE;
+}
+
+ZMK_LISTENER(split_display_view_usb, usb_listener);
+ZMK_SUBSCRIPTION(split_display_view_usb, zmk_usb_conn_state_changed);
+#endif
+
+static const struct bt_l2cap_chan_ops status_ops = {
+    .recv = status_recv,
+#if IS_ENABLED(CONFIG_ZMK_SPLIT_DISPLAY_VIEW_USB_POWER)
+    .connected = status_connected,
+#endif
+};
 
 static int status_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
                          struct bt_l2cap_chan **chan) {

@@ -11,7 +11,10 @@ The screen is drawn in portrait and rotated onto a 160x68 one-bit display
 such as nice!view. It shows:
 
 - USB and BLE output of the central, the active BLE profile and its state
-- the battery level of each half (and optionally of the central)
+- the battery level of each half (and optionally of the central), with
+  a lightning bolt to the right of the percentage while that device's USB
+  has power. The bolt means USB power is present, not that the battery is
+  charging: the halves cannot tell a full battery from a charging one
 - the name of the highest active layer, or `no link` when the half is
   not connected to the central. A name too wide for the large font is
   drawn in the small font, which fits 8 characters; longer names are
@@ -21,8 +24,10 @@ such as nice!view. It shows:
 
 A peripheral has no keymap or HID state, so the central sends all of it
 to each peripheral as one small status message over a Bluetooth L2CAP
-channel (PSM 0x0081) on the existing split connection. The central side
-of this module does that, so it needs no other modules. It replaces
+channel (PSM 0x0081) on the existing split connection. Each peripheral
+sends back one byte on the same channel when its USB power changes and
+when the channel connects. The central side of this module does that, so
+it needs no other modules. It replaces
 [dmhuisma/zmk-split-status-relay](https://github.com/dmhuisma/zmk-split-status-relay)
 and
 [zmk_arbitrary_split_data_channel](https://github.com/dmhuisma/zmk_arbitrary_split_data_channel),
@@ -77,7 +82,13 @@ chosen node from the overlays.
 | `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_SLOT0_LABEL` | `L` | Battery label of the first peripheral the central paired |
 | `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_SLOT1_LABEL` | `R` | Battery label of the second |
 | `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_CENTRAL_BATTERY` | n | Also show the central's battery |
+| `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_USB_POWER` | y if `CONFIG_USB_DEVICE_STACK` | Tell the central when this half's USB has power, so the screens show a bolt by its battery |
 | `CONFIG_ZMK_SPLIT_DISPLAY_VIEW_CENTRAL` | y on a BLE split central | Send the status to the peripherals |
+
+`CONFIG_ZMK_SPLIT_DISPLAY_VIEW_USB_POWER` reads ZMK's USB power state,
+the same one the stock nice!view widget uses. ZMK v0.3 turns on
+`CONFIG_USB_DEVICE_STACK` by default on SoCs with USB such as the
+nRF52840, peripherals included, without USB HID.
 
 The halves share one `.conf` in most user configs, so set the mirror
 option for the right half only, for example with
